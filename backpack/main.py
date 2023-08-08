@@ -246,7 +246,6 @@ if __name__ == "__main__":
     # Vytvoření konvergenčního grafu pro brute force řešení
     plt.figure()
     plt.plot(range(len(all_runs_data)), all_runs_data, label='Hodnota')
-    plt.axhline(y=mean_per_iteration_brute_force, color='red', linestyle='--', label='Průměr')
     plt.axhline(y=mean_per_iteration_brute_force + std_dev_per_iteration_brute_force, color='green', linestyle=':',
                 label='Horní mez konf. int.')
     plt.axhline(y=mean_per_iteration_brute_force - std_dev_per_iteration_brute_force, color='green', linestyle=':',
