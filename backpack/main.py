@@ -87,24 +87,30 @@ def brute_force_solution(provided_items, maximum_capacity):
             else:
                 matrix_id_volume[idx][v] = matrix_id_volume[idx - 1][v]
 
-            _all_runs_data.append(matrix_id_volume[idx][v])
-
         _all_runs_data.append(matrix_id_volume[idx][maximum_capacity])
 
     _best_value = matrix_id_volume[_number_of_items][maximum_capacity]
     _best_combination = []
     idx, v = _number_of_items, maximum_capacity
-
+    _step = 1
+    print("\tProcházím matici a vybírám předměty")
     while idx > 0 and v > 0:
+        item = provided_items[idx - 1]
         if matrix_id_volume[idx][v] != matrix_id_volume[idx - 1][v]:
-            item = provided_items[idx - 1]
             _best_combination.append(item["id"])
             v -= item["volume"]
+            print(f"{_step}\tVybrán předmět s ID {item['id']}, objemem {item['volume']} a hodnotou {item['value']}. Zbývající kapacita batohu: {v}")
+        else:
+            print(f"{_step}\tPředmět s ID {item['id']} nebyl vybrán")
         idx -= 1
+        _step += 1
 
     end_time = time()
     _best_combination.sort()
-    return _best_combination, _best_value, end_time - start_time, _all_runs_data
+
+    print(f"\nDoba výpočtu: {end_time - start_time:.2f} s\n")
+    print(f"Nejvyšší hodnota dosažená pomocí brute force: {_best_value}\n")
+    return _best_combination, _all_runs_data
 
 
 def generate_neighbour_solution(current_solution, items, number_of_items, maximum_capacity, bits_to_invert=1):
@@ -169,23 +175,23 @@ def simulated_annealing_solution(provided_items, maximum_capacity, fes, max_temp
 
 def print_items(desired_items, header_text="Vygenerované předměty", print_summary=False):
     if desired_items is None or len(desired_items) == 0:
-        print("Žádné předměty k vypsání")
+        print("[ERROR] Žádné předměty k vypsání")
         return
 
-    print(f"{header_text}:")
-    print("=================================")
-    print("|", "Id", "|", "Objem", "|", "Hodnota", "|", sep="\t")
+    print(f"\t{header_text}:")
+    print("\t=================================")
+    print("\t|", "Id", "|", "Objem", "|", "Hodnota", "|", sep="\t")
     _sum_volume = 0
     _sum_value = 0
     for item in desired_items:
         _sum_volume += item["volume"] if isinstance(item, dict) else item
         _sum_value += item["value"] if isinstance(item, dict) else item
-        print("|", item["id"], "|", item["volume"], "\t|", item["value"], "\t|", sep="\t")
+        print("\t|", item["id"], "|", item["volume"], "\t|", item["value"], "\t|", sep="\t")
 
     if print_summary:
-        print("|-------------------------------|")
-        print("|", "  ", "|", _sum_volume, "\t|", _sum_value, "\t|", sep="\t")
-    print("=================================\n\n")
+        print("\t|-------------------------------|")
+        print("\t|", "  ", "|", _sum_volume, "\t|", _sum_value, "\t|", sep="\t")
+    print("\t=================================\n")
 
 
 def gather_items_from_solution(best_solution, items, bit_picking=True):
@@ -205,23 +211,33 @@ def gather_items_from_solution(best_solution, items, bit_picking=True):
     return _result
 
 
+def gather_ids_from_solution(best_solution):
+    if best_solution is None or len(best_solution) == 0:
+        return []
+
+    _result = []
+    for idx, val in enumerate(best_solution, start=0):
+        if val == 1:
+            _result.append(idx)
+
+    return _result
+
+
 if __name__ == "__main__":
     number_of_items = 15
 
     items = generate_instance(number_of_items)
     maximum_capacity = set_capacity(number_of_items)
-
+    print(f"Na základě počtu předmětů byla vybrána kapacita batohu: {maximum_capacity}\n")
     print_items(items)
 
     # brute force řešení
-    print("Provádím brute force řešení...")
-    best_combination, best_value, execution_time, all_runs_data = brute_force_solution(items, maximum_capacity)
+    print("Zahajuji brute force řešení...")
+    print("==============================\n")
+    best_combination, all_runs_data = brute_force_solution(items, maximum_capacity)
     solution_items_from_bt = gather_items_from_solution(best_combination, items, False)
 
-    # Výpis nalezeného řešení
-    print(f"Celková hodnota: {best_value}")
-    print(f"Čas výpočtu: {execution_time:.2f} s")
-    print_items(solution_items_from_bt, "Nejlepší kombinace", True)
+    print_items(solution_items_from_bt, "Nejlepší kombinace předmětů (brute force)", True)
 
     # Statistiky pro brute force řešení
     mean_per_iteration_brute_force = np.mean(all_runs_data)
@@ -240,9 +256,11 @@ if __name__ == "__main__":
     plt.title("Konvergenční graf Brute Force řešení")
     plt.legend()
     plt.savefig("output/konvergencni_graf_brute_force_kp.png")
+    print("[INFO] Graf byl uložen do složky ./output s názvem \"konvergencni_graf_brute_force_kp.png\"\n")
 
     # simulované žíhání
-    print("Provádím simulované žíhání...")
+    print("Zahajuji řešení pomocí simulovaného žíhání...")
+    print("=============================================\n")
 
     # parametry
     max_temp = 2000
@@ -264,18 +282,19 @@ if __name__ == "__main__":
     for i in range(num_runs):
         best_solution_run, best_value_run, best_volume_run, temp_list_run, value_list_run \
             = simulated_annealing_solution(items, maximum_capacity, max_fes, max_temp, min_temp, cooling_rate)
+        log_message = f"[Běh {i + 1}/{num_runs}] Simulované žíhání - hodnota: {best_value_run} - objem: {best_volume_run} - zvolené předměty: {gather_ids_from_solution(best_solution_run)}"
 
-        print(f"Simulované žíhání - běh {i + 1}/{num_runs} - hodnota: {best_value_run} - objem: {best_volume_run} - zvolené předměty: {best_solution_run}")
         if best_value_run > overall_best_value and best_volume_run <= maximum_capacity:
-            print(f"Nová nejlepší hodnota: {best_value_run} s objemem: {best_volume_run}")
             overall_best_solution = best_solution_run
             overall_best_value = best_value_run
             overall_best_temp_list = temp_list_run
             overall_best_value_list = value_list_run
+            log_message += f" <= Nové nejlepší řešení!"
         all_best_values_sa.append(value_list_run)
+        print(log_message)
 
     # Výpis nalezeného řešení pro simulované žíhání
-    print(f"Celková hodnota (simulované žíhání): {overall_best_value}")
+    print(f"\nNejvyšší hodnota dosažená pomocí simulovaného žíhání: {overall_best_value}\n")
 
     solution_items_from_sa = gather_items_from_solution(overall_best_solution, items)
     print_items(solution_items_from_sa, "Nejlepší kombinace předmětů (simulované žíhání)", True)
@@ -297,6 +316,7 @@ if __name__ == "__main__":
         plt.title("Konvergenční graf Simulovaného žíhání s rozptylem")
         plt.legend()
         plt.savefig("output/konvergencni_graf_sa_kp_s_rozptylem.png")
+        print(f"[INFO] Konvergenční graf {num_runs} běhů byl uložen do složky ./output s názvem \"konvergencni_graf_sa_kp_s_rozptylem.png\"\n")
 
     # Konec programu
     exit(0)
