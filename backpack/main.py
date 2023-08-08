@@ -1,5 +1,4 @@
-from random import random, randint, choices
-from itertools import combinations
+from random import random, randint
 from time import time
 import numpy as np
 from matplotlib import pyplot as plt
@@ -18,6 +17,14 @@ def generate_instance(number_of_items):
     return _items
 
 
+def generate_backpack_with_n_picked(number_of_items):
+    arr = np.zeros(number_of_items, dtype=int)
+    ones = min(3, number_of_items)
+    arr[:ones] = 1
+    np.random.shuffle(arr)
+    return arr
+
+
 def set_capacity(number_of_items):
     if number_of_items <= 15:
         return 100
@@ -27,63 +34,97 @@ def set_capacity(number_of_items):
         return 300
 
 
-def calculate_combination_value(combination, items):
+def calculate_combination_value(combination, items, bit_picking=True):
     total_value = 0
     total_volume = 0
 
-    if isinstance(combination[0], dict):
-        for idx in combination:
-            id, _, _ = idx.values()
-            total_value += items[id]["value"]
-            total_volume += items[id]["volume"]
-    elif isinstance(combination[0], int):
+    if bit_picking:
         for idx, val in enumerate(combination, start=0):
             if val == 1:
                 total_value += items[idx]["value"]
                 total_volume += items[idx]["volume"]
+    else:
+        for idx in combination:
+            total_value += items[idx]["value"]
+            total_volume += items[idx]["volume"]
 
     return total_value, total_volume
 
+# Toto je velmi pomalé řešení, které jsem zkusil jako první. O(2^N)
+# def brute_force_solution(provided_items, maximum_capacity):
+#     _all_runs_data = []
+#     _best_combination = []
+#     _best_value = 0
+#     _item_ids = [item["id"] for item in provided_items]
+#     start_time = time()
+#
+#     for r in range(1, len(_item_ids) + 1):
+#         for combination in combinations(_item_ids, r):
+#             value, volume = calculate_combination_value(combination, provided_items, False)
+#             if volume <= maximum_capacity and value > _best_value:
+#                 _best_value = value
+#                 _best_combination = combination
+#             _all_runs_data.append(value)
+#
+#     end_time = time()
+#     return _best_combination, _best_value, end_time - start_time, _all_runs_data
 
+
+# 2D vektor pro dynamické programování O(N * V)
 def brute_force_solution(provided_items, maximum_capacity):
-    all_runs_data = []
-    _best_combination = []
-    _best_value = 0
     start_time = time()
+    _all_runs_data = []
+    _number_of_items = len(provided_items)
 
-    for r in range(1, len(provided_items) + 1):
-        for combination in combinations(provided_items, r):
-            value, volume = calculate_combination_value(combination, provided_items)
-            if volume <= maximum_capacity and value > _best_value:
-                _best_value = value
-                _best_combination = combination
-            all_runs_data.append(value)
+    matrix_id_volume = np.zeros((_number_of_items + 1, maximum_capacity + 1), dtype=int).tolist()
+
+    for idx in range(1, _number_of_items + 1):
+        item = provided_items[idx - 1]
+        for v in range(1, maximum_capacity + 1):
+            if item["volume"] <= v:
+                matrix_id_volume[idx][v] = max(matrix_id_volume[idx - 1][v],
+                                               matrix_id_volume[idx - 1][v - item["volume"]] + item["value"])
+            else:
+                matrix_id_volume[idx][v] = matrix_id_volume[idx - 1][v]
+
+            _all_runs_data.append(matrix_id_volume[idx][v])
+
+        _all_runs_data.append(matrix_id_volume[idx][maximum_capacity])
+
+    _best_value = matrix_id_volume[_number_of_items][maximum_capacity]
+    _best_combination = []
+    idx, v = _number_of_items, maximum_capacity
+
+    while idx > 0 and v > 0:
+        if matrix_id_volume[idx][v] != matrix_id_volume[idx - 1][v]:
+            item = provided_items[idx - 1]
+            _best_combination.append(item["id"])
+            v -= item["volume"]
+        idx -= 1
 
     end_time = time()
-    return _best_combination, _best_value, end_time - start_time, all_runs_data
+    _best_combination.sort()
+    return _best_combination, _best_value, end_time - start_time, _all_runs_data
 
 
-def generate_neighbour_solution(current_solution, number_of_items, maximum_capacity, max_attempts=10):
-    for _ in range(max_attempts):
-        neighbour_solution = current_solution.copy()
-        invert_probability = 1 / number_of_items
+def generate_neighbour_solution(current_solution, items, number_of_items, maximum_capacity, bits_to_invert=1):
+    neighbour_solution = current_solution.copy()
 
-        for idx in range(number_of_items):
-            if random() < invert_probability:
-                neighbour_solution[idx] = 1 - neighbour_solution[idx]
+    for _ in range(bits_to_invert):
+        idx = randint(0, number_of_items - 1)
+        neighbour_solution[idx] = 1 - neighbour_solution[idx]
 
-        neighbour_value, neighbour_volume = calculate_combination_value(neighbour_solution, items)
+    neighbour_value, neighbour_volume = calculate_combination_value(neighbour_solution, items)
 
-        if neighbour_volume <= maximum_capacity:
-            return neighbour_solution
+    if neighbour_volume <= maximum_capacity:
+        return neighbour_solution
 
-    # Pokud počet pokusů překročí max_attempts, vrať aktuální řešení.
     return current_solution
 
 
 def simulated_annealing_solution(provided_items, maximum_capacity, fes, max_temperature, min_temperature, cooling_rate = 0.999):
     _num_items = len(provided_items)
-    _current_solution = choices([0, 1], k=_num_items)
+    _current_solution = generate_backpack_with_n_picked(_num_items)
     _current_temperature = max_temperature
     _current_iteration = 1
 
@@ -95,7 +136,11 @@ def simulated_annealing_solution(provided_items, maximum_capacity, fes, max_temp
     
     while _current_temperature > min_temperature and _current_iteration < fes:
         # vygenerování sousedního řešení
-        _neighbour_solution = generate_neighbour_solution(_current_solution, _num_items, maximum_capacity)
+        _neighbour_solution = generate_neighbour_solution(_current_solution,
+                                                          provided_items,
+                                                          _num_items,
+                                                          maximum_capacity,
+                                                          3 if _current_iteration < 100 else 1)
 
         # ohodnocení aktuálního a sousedního řešení
         _current_value, _current_volume = calculate_combination_value(_current_solution, provided_items)
@@ -143,35 +188,40 @@ def print_items(desired_items, header_text="Vygenerované předměty", print_sum
     print("=================================\n\n")
 
 
-def gather_items_from_solution(best_solution, items):
+def gather_items_from_solution(best_solution, items, bit_picking=True):
     if best_solution is None or len(best_solution) == 0:
         return []
 
     _result = []
 
-    for idx, val in enumerate(best_solution, start=0):
-        if val == 1:
+    if bit_picking:
+        for idx, val in enumerate(best_solution, start=0):
+            if val == 1:
+                _result.append(items[idx])
+    else:
+        for idx in best_solution:
             _result.append(items[idx])
 
     return _result
 
 
 if __name__ == "__main__":
-    num_items = 50
+    number_of_items = 15
 
-    items = generate_instance(num_items)
-    capacity = set_capacity(num_items)
+    items = generate_instance(number_of_items)
+    maximum_capacity = set_capacity(number_of_items)
 
     print_items(items)
 
     # brute force řešení
     print("Provádím brute force řešení...")
-    best_combination, best_value, execution_time, all_runs_data = brute_force_solution(items, capacity)
+    best_combination, best_value, execution_time, all_runs_data = brute_force_solution(items, maximum_capacity)
+    solution_items_from_bt = gather_items_from_solution(best_combination, items, False)
 
     # Výpis nalezeného řešení
     print(f"Celková hodnota: {best_value}")
     print(f"Čas výpočtu: {execution_time:.2f} s")
-    print_items(best_combination, "Nejlepší kombinace", True)
+    print_items(solution_items_from_bt, "Nejlepší kombinace", True)
 
     # Statistiky pro brute force řešení
     mean_per_iteration_brute_force = np.mean(all_runs_data)
@@ -195,11 +245,15 @@ if __name__ == "__main__":
     print("Provádím simulované žíhání...")
 
     # parametry
-    max_temp = 1000
+    max_temp = 2000
     min_temp = 0.1
-    fes = (2**num_items) - 1   # 2^n - 1 (počet všech možných kombinací)
+    # Maximální počet iterací pro O(2^N)
+    # max_fes = (2 ** num_items) - 1   # 2^n - 1 (počet všech možných kombinací)
+
+    # Maximální počet iterací pro O(N * V) - dynamické programování (2D vektor)
+    max_fes = (number_of_items + 1) * (maximum_capacity + 1) - 1  # (n + 1) * (v + 1) - počet všech možných kombinací
     num_runs = 30
-    cooling_rate = 0.995
+    cooling_rate = 0.999
     all_best_values_sa = []
 
     overall_best_solution = None
@@ -209,10 +263,10 @@ if __name__ == "__main__":
 
     for i in range(num_runs):
         best_solution_run, best_value_run, best_volume_run, temp_list_run, value_list_run \
-            = simulated_annealing_solution(items, capacity, fes, max_temp, min_temp, cooling_rate)
+            = simulated_annealing_solution(items, maximum_capacity, max_fes, max_temp, min_temp, cooling_rate)
 
         print(f"Simulované žíhání - běh {i + 1}/{num_runs} - hodnota: {best_value_run} - objem: {best_volume_run} - zvolené předměty: {best_solution_run}")
-        if best_value_run > overall_best_value and best_volume_run <= capacity:
+        if best_value_run > overall_best_value and best_volume_run <= maximum_capacity:
             print(f"Nová nejlepší hodnota: {best_value_run} s objemem: {best_volume_run}")
             overall_best_solution = best_solution_run
             overall_best_value = best_value_run
