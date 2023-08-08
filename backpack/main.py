@@ -128,7 +128,7 @@ def generate_neighbour_solution(current_solution, items, number_of_items, maximu
     return current_solution
 
 
-def simulated_annealing_solution(provided_items, maximum_capacity, fes, max_temperature, min_temperature, cooling_rate = 0.999):
+def simulated_annealing_solution(provided_items, maximum_capacity, fes, max_temperature, min_temperature, cooling_rate=0.999):
     _num_items = len(provided_items)
     _current_solution = generate_backpack_with_n_picked(_num_items)
     _current_temperature = max_temperature
@@ -146,7 +146,7 @@ def simulated_annealing_solution(provided_items, maximum_capacity, fes, max_temp
                                                           provided_items,
                                                           _num_items,
                                                           maximum_capacity,
-                                                          3 if _current_iteration < 100 else 1)
+                                                          3 if _current_iteration < fes // 4 else 1)
 
         # ohodnocení aktuálního a sousedního řešení
         _current_value, _current_volume = calculate_combination_value(_current_solution, provided_items)
