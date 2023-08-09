@@ -1,3 +1,4 @@
+import os
 from random import random, randint
 from time import time
 import numpy as np
@@ -17,9 +18,9 @@ def generate_instance(number_of_items):
     return _items
 
 
-def generate_backpack_with_n_picked(number_of_items):
+def generate_backpack_with_n_picked(number_of_items, n_picked = 3):
     arr = np.zeros(number_of_items, dtype=int)
-    ones = min(3, number_of_items)
+    ones = min(n_picked, number_of_items)
     arr[:ones] = 1
     np.random.shuffle(arr)
     return arr
@@ -93,15 +94,15 @@ def brute_force_solution(provided_items, maximum_capacity):
     _best_combination = []
     idx, v = _number_of_items, maximum_capacity
     _step = 1
-    print("\tProcházím matici a vybírám předměty")
+    print("Procházím matici a vybírám předměty")
     while idx > 0 and v > 0:
         item = provided_items[idx - 1]
         if matrix_id_volume[idx][v] != matrix_id_volume[idx - 1][v]:
             _best_combination.append(item["id"])
             v -= item["volume"]
-            print(f"{_step}\tVybrán předmět s ID {item['id']}, objemem {item['volume']} a hodnotou {item['value']}. Zbývající kapacita batohu: {v}")
+            print(f"{_step:>4}. Vybrán předmět s ID {item['id']}, objemem {item['volume']} a hodnotou {item['value']}. Zbývající kapacita batohu: {v}")
         else:
-            print(f"{_step}\tPředmět s ID {item['id']} nebyl vybrán")
+            print(f"{_step:>4}. Předmět s ID {item['id']} nebyl vybrán")
         idx -= 1
         _step += 1
 
@@ -178,20 +179,20 @@ def print_items(desired_items, header_text="Vygenerované předměty", print_sum
         print("[ERROR] Žádné předměty k vypsání")
         return
 
-    print(f"\t{header_text}:")
-    print("\t=================================")
-    print("\t|", "Id", "|", "Objem", "|", "Hodnota", "|", sep="\t")
+    print(f"{header_text}:")
+    print("=" * 29)
+    print("| {:4} | {:>7} | {:>8} |".format("Id", "Objem", "Hodnota"))
     _sum_volume = 0
     _sum_value = 0
     for item in desired_items:
         _sum_volume += item["volume"] if isinstance(item, dict) else item
         _sum_value += item["value"] if isinstance(item, dict) else item
-        print("\t|", item["id"], "|", item["volume"], "\t|", item["value"], "\t|", sep="\t")
+        print("| {:4} | {:>7} | {:>8} |".format(item["id"], item["volume"], item["value"]))
 
     if print_summary:
-        print("\t|-------------------------------|")
-        print("\t|", "  ", "|", _sum_volume, "\t|", _sum_value, "\t|", sep="\t")
-    print("\t=================================\n")
+        print("|" + ("-" * 27) + "|")
+        print("| {:4} | {:>7} | {:>8} |".format("", _sum_volume, _sum_value))
+    print("=" * 29 + "\n")
 
 
 def gather_items_from_solution(best_solution, items, bit_picking=True):
@@ -224,6 +225,9 @@ def gather_ids_from_solution(best_solution):
 
 
 if __name__ == "__main__":
+    output_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
+    os.makedirs(output_folder, exist_ok=True)
+    
     number_of_items = 15
 
     items = generate_instance(number_of_items)
@@ -281,7 +285,7 @@ if __name__ == "__main__":
     for i in range(num_runs):
         best_solution_run, best_value_run, best_volume_run, temp_list_run, value_list_run \
             = simulated_annealing_solution(items, maximum_capacity, max_fes, max_temp, min_temp, cooling_rate)
-        log_message = f"[Běh {i + 1}/{num_runs}] Simulované žíhání - hodnota: {best_value_run} - objem: {best_volume_run} - zvolené předměty: {gather_ids_from_solution(best_solution_run)}"
+        log_message = f"[Běh {(i + 1):>2}/{num_runs}] Simulované žíhání - hodnota: {best_value_run:>4} - objem: {best_volume_run:>4} - zvolené předměty: {gather_ids_from_solution(best_solution_run)}"
 
         if best_value_run > overall_best_value and best_volume_run <= maximum_capacity:
             overall_best_solution = best_solution_run

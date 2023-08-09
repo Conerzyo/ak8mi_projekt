@@ -61,7 +61,7 @@ def simulated_annealing(cost_function, dim, max_iterations, max_temp=1000, min_t
 
 # Spuštění algoritmů, statistické výstupy a generování grafů
 if __name__ == '__main__':
-    output_folder = 'output'
+    output_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
     os.makedirs(output_folder, exist_ok=True)
 
     # Základní nastavení
@@ -109,6 +109,7 @@ if __name__ == '__main__':
                                         'Odchylka': np.mean(std_dev_values_csv)})
 
                 # Konvergenční graf všech běhů
+                plot_path = os.path.join(output_folder, f'{algorithm_name}_{function_name}_D{current_dimensions_size}_konvergence.png')
                 plt.figure(figsize=(10, 6))
                 for i in range(runs):
                     plt.plot(range(iterations), all_best_results[i], alpha=0.5)
@@ -117,10 +118,12 @@ if __name__ == '__main__':
                 plt.ylabel('Cost')
                 plt.title(f'{algorithm_name} - {function_name} (D={current_dimensions_size}) - Konvergence')
                 plt.grid(True)
-                plt.savefig(os.path.join(output_folder, f'{algorithm_name}_{function_name}_D{current_dimensions_size}_konvergence.png'))
+                plt.savefig(plot_path)
                 plt.close()
+                print(f"[INFO] Kovergenční graf všechn běhů uložen v \"{plot_path}\"")
 
                 # Průměrný konvergenční graf
+                mean_plot_path = os.path.join(output_folder, f'{algorithm_name}_{function_name}_D{current_dimensions_size}_avg_konvergence.png')
                 plt.figure(figsize=(10, 6))
                 plt.plot(range(iterations), mean_values, label='Mean', color='blue')
                 plt.fill_between(range(iterations),
@@ -134,12 +137,15 @@ if __name__ == '__main__':
                 plt.title(f'{algorithm_name} - {function_name} (D={current_dimensions_size}) - Průměrná konvergence')
                 plt.grid(True)
                 plt.legend()
-                plt.savefig(os.path.join(output_folder, f'{algorithm_name}_{function_name}_D{current_dimensions_size}_avg_konvergence.png'))
+                plt.savefig(mean_plot_path)
                 plt.close()
+                print(f"[INFO] Graf průměrné konvergence uložen v \"{mean_plot_path}\"")
 
     # Uložeí statistických výstupů do tabulky
+    csv_path = os.path.join(output_folder, 'statistics.csv')
     statistics_df = pd.DataFrame(statistics_data)
-    statistics_df.to_csv(os.path.join(output_folder, 'statistics.csv'), index=False)
+    statistics_df.to_csv(csv_path, index=False)
+    print(f"[INFO] Statistická data uložena v \"{csv_path}\"")
 
-    print("Výstupní tabulka a grafy byly uloženy do složky 'output'.")
+    print(f"\n[INFO] Výstupní tabulka a grafy byly uloženy do složky \"{output_folder}\".")
     exit(0)
