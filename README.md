@@ -4,6 +4,17 @@ Python 3.10
 Tento repozitář obsahuje kód pro obě zadané úlohy. Složky `backpack` a `benchmarking` obsahují kód python script, který
 se snaží řešit zadané problémy. Složka `output` obsahuje výstupy programu.
 
+## Spuštění programu
+
+Doporučuji použít virutální prostředí, například venv. Po inicializaci toto virtuální prostředí aktivovat. Nainstalovat potřebné knihovny pomoci příkazu:
+
+`python -m pip install -r requirements.txt`
+
+Následně spustit vybranou úlohu:
+
+- Benchmarking: `python benchmarking/main.py`
+- Backpack" `python backpak/main.py`
+
 ## Řešené problémy
 ### _Benchmarking_ 
 
