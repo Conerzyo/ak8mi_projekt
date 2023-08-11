@@ -121,7 +121,7 @@ def generate_neighbour_solution(current_solution, items, number_of_items, maximu
         idx = randint(0, number_of_items - 1)
         neighbour_solution[idx] = 1 - neighbour_solution[idx]
 
-    neighbour_value, neighbour_volume = calculate_combination_value(neighbour_solution, items)
+    _, neighbour_volume = calculate_combination_value(neighbour_solution, items)
 
     if neighbour_volume <= maximum_capacity:
         return neighbour_solution
@@ -143,14 +143,14 @@ def simulated_annealing_solution(provided_items, maximum_capacity, fes, max_temp
     
     while _current_temperature > min_temperature and _current_iteration < fes:
         # vygenerování sousedního řešení
-        _neighbour_solution = generate_neighbour_solution(_current_solution,
+        _neighbour_solution = generate_neighbour_solution(best_solution,
                                                           provided_items,
                                                           _num_items,
                                                           maximum_capacity,
-                                                          3 if _current_iteration < fes // 4 else 1)
+                                                          3 if _current_iteration < fes // 10 else 1)
 
         # ohodnocení aktuálního a sousedního řešení
-        _current_value, _current_volume = calculate_combination_value(_current_solution, provided_items)
+        _current_value, _ = calculate_combination_value(best_solution, provided_items)
         _neighbour_value, _neighbour_volume = calculate_combination_value(_neighbour_solution, provided_items)
 
         _delta = _neighbour_value - _current_value
@@ -160,10 +160,6 @@ def simulated_annealing_solution(provided_items, maximum_capacity, fes, max_temp
                 best_solution = _neighbour_solution.copy()
                 best_value = _neighbour_value
                 best_volume = _neighbour_volume
-            else:
-                best_solution = _current_solution.copy()
-                best_value = _current_value
-                best_volume = _current_volume
 
         temperature_list.append(_current_temperature)
         best_values_list.append(best_value)
@@ -258,7 +254,7 @@ if __name__ == "__main__":
     plt.ylabel("Hodnota nejlepší kombinace")
     plt.title("Konvergenční graf Brute Force řešení")
     plt.legend()
-    plt.savefig("output/konvergencni_graf_brute_force_kp.png")
+    plt.savefig(output_folder + "/konvergencni_graf_brute_force_kp.png")
     print("[INFO] Graf byl uložen do složky ./output s názvem \"konvergencni_graf_brute_force_kp.png\"\n")
 
     # simulované žíhání
@@ -318,7 +314,7 @@ if __name__ == "__main__":
         plt.ylabel("Hodnota nejlepší kombinace")
         plt.title("Konvergenční graf Simulovaného žíhání s rozptylem")
         plt.legend()
-        plt.savefig("output/konvergencni_graf_sa_kp_s_rozptylem.png")
+        plt.savefig(output_folder + "/konvergencni_graf_sa_kp_s_rozptylem.png")
         print(f"[INFO] Konvergenční graf {num_runs} běhů byl uložen do složky ./output s názvem \"konvergencni_graf_sa_kp_s_rozptylem.png\"\n")
 
     # Konec programu
