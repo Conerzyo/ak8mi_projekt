@@ -18,7 +18,7 @@ def generate_instance(number_of_items):
     return _items
 
 
-def generate_backpack_with_n_picked(number_of_items, n_picked = 3):
+def generate_backpack_with_n_picked(number_of_items, n_picked=3):
     arr = np.zeros(number_of_items, dtype=int)
     ones = min(n_picked, number_of_items)
     arr[:ones] = 1
@@ -109,7 +109,7 @@ def brute_force_solution(provided_items, maximum_capacity):
     end_time = time()
     _best_combination.sort()
 
-    print(f"\nDoba výpočtu: {end_time - start_time:.2f} s\n")
+    print(f"\nDoba výpočtu: {end_time - start_time:.3f} s\n")
     print(f"Nejvyšší hodnota dosažená pomocí brute force: {_best_value}\n")
     return _best_combination, _all_runs_data
 
@@ -252,10 +252,10 @@ if __name__ == "__main__":
                 label='Spodní mez konf. int.')
     plt.xlabel("Iterace")
     plt.ylabel("Hodnota nejlepší kombinace")
-    plt.title("Konvergenční graf Brute Force řešení")
+    plt.title("Graf Brute Force řešení")
     plt.legend()
-    plt.savefig(output_folder + "/konvergencni_graf_brute_force_kp.png")
-    print("[INFO] Graf byl uložen do složky ./output s názvem \"konvergencni_graf_brute_force_kp.png\"\n")
+    plt.savefig(output_folder + "/graf_brute_force_kp.png")
+    print("[INFO] Graf byl uložen do složky ./output s názvem \"graf_brute_force_kp.png\"\n")
 
     # simulované žíhání
     print("Zahajuji řešení pomocí simulovaného žíhání...")
@@ -272,6 +272,7 @@ if __name__ == "__main__":
     num_runs = 30
     cooling_rate = 0.999
     all_best_values_sa = []
+    all_max_values_sa = []
 
     overall_best_solution = None
     overall_best_value = 0
@@ -291,18 +292,28 @@ if __name__ == "__main__":
             overall_best_value_list = value_list_run
             log_message += f" <= Nové nejlepší řešení!"
         all_best_values_sa.append(value_list_run)
+        all_max_values_sa.append(max(value_list_run))
         print(log_message)
 
     end_time_sa = time()
 
     # Výpis nalezeného řešení pro simulované žíhání
-    print(f"\nNejvyšší hodnota dosažená pomocí simulovaného žíhání: {overall_best_value}. Doba výpočtu: {end_time_sa - start_time_sa:.2f} s\n")
+    print(f"\nNejvyšší hodnota dosažená pomocí simulovaného žíhání: {overall_best_value}. Doba výpočtu: {end_time_sa - start_time_sa:.3f} s\n")
 
     solution_items_from_sa = gather_items_from_solution(overall_best_solution, items)
     print_items(solution_items_from_sa, "Nejlepší kombinace předmětů (simulované žíhání)", True)
 
     # Vytvoření konvergenčního grafu a statistik pro simulované žíhání
     if overall_best_temp_list is not None or overall_best_value_list is not None:
+        # Vytvoření grafu vývoj nejlepší hodnoty pro simulované žíhání
+        plt.figure()
+        plt.plot(range(len(all_max_values_sa)), all_max_values_sa)
+        plt.xlabel("Běh")
+        plt.ylabel("Nejlepší hodnota batohu")
+        plt.title("Vývoj nejlepší hodnoty batohu pro Simulované žíhání")
+        plt.savefig(output_folder + "/vyvoj_hodnoty_batohu_sa.png")
+        print("[INFO] Graf vývoje nejlepší hodnoty batohu byl uložen do složky ./output s názvem \"vyvoj_hodnoty_batohu_sa.png\"\n")
+
         mean_per_iteration = np.mean(all_best_values_sa, axis=0)
         std_dev_per_iteration = np.std(all_best_values_sa, axis=0)
 
