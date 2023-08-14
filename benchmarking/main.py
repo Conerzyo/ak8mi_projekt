@@ -36,7 +36,7 @@ def simulated_annealing(cost_function, dim, max_iterations, max_temp=1000, min_t
     temperature = max_temp
 
     for iteration in range(max_iterations):
-        for _ in range(10):  # 10 FES per iteration
+        for _ in range(10):  # 10 FES na iteraci
             new_solution = solution + np.random.normal(0, 1, dim)
             new_solution = np.clip(new_solution, -5.12, 5.12)
             new_cost = cost_function(new_solution)
@@ -52,7 +52,7 @@ def simulated_annealing(cost_function, dim, max_iterations, max_temp=1000, min_t
         if temperature < min_temp:
             break
 
-    # doplnění NaN hodnotami pro iterace, které se již neprovedly
+    # doplnění NaN hodnotami pro iterace, které se již neprovedly, aby bylo možné generovat grafy
     remaining_iterations = max_iterations - len(best_results)
     best_results += [np.nan] * remaining_iterations
 
