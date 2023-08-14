@@ -278,6 +278,7 @@ if __name__ == "__main__":
     overall_best_temp_list = None
     overall_best_value_list = None
 
+    start_time_sa = time()
     for i in range(num_runs):
         best_solution_run, best_value_run, best_volume_run, temp_list_run, value_list_run \
             = simulated_annealing_solution(items, maximum_capacity, max_fes, max_temp, min_temp, cooling_rate)
@@ -292,8 +293,10 @@ if __name__ == "__main__":
         all_best_values_sa.append(value_list_run)
         print(log_message)
 
+    end_time_sa = time()
+
     # Výpis nalezeného řešení pro simulované žíhání
-    print(f"\nNejvyšší hodnota dosažená pomocí simulovaného žíhání: {overall_best_value}\n")
+    print(f"\nNejvyšší hodnota dosažená pomocí simulovaného žíhání: {overall_best_value}. Doba výpočtu: {end_time_sa - start_time_sa:.2f} s\n")
 
     solution_items_from_sa = gather_items_from_solution(overall_best_solution, items)
     print_items(solution_items_from_sa, "Nejlepší kombinace předmětů (simulované žíhání)", True)
